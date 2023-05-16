@@ -1,7 +1,7 @@
 {
     "name": "@prostojs/cli-help",
-    "version": "0.3.6",
-    "description": "Plain simple cli-help with banner and colors",
+    "version": "0.0.0",
+    "description": "CLI Help Renderer",
     "main": "index.js",
     "module": "dist/cli-help.esm-bundler.js",
     "types": "dist/cli-help.d.ts",
