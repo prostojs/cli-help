@@ -18,8 +18,8 @@ let target = ''
 run()
 
 async function run() {
-  await build()
-  checkSize()
+    await build()
+    checkSize()
 }
 
 const error = dye('red', 'bold').attachConsole('error')
@@ -28,103 +28,110 @@ const green = dye('green', 'bold').attachConsole()
 const gray = dye('green', 'bold')
 
 async function build() {
-  const pkgDir = path.resolve(`./`)
-  const pkg = require(`${pkgDir}/package.json`)
-  target = pkg.name
-  // if this is a full build (no specific targets), ignore private packages
-  if (isRelease && pkg.private) {
-    return
-  }
-
-  // if building a specific format, do not remove dist.
-  if (!formats) {
-    await fs.remove(`${pkgDir}/dist`)
-  }
-
-  const env =
-    (pkg.buildOptions && pkg.buildOptions.env) ||
-    (devOnly ? 'development' : 'production')
-  await execa(
-    'rollup',
-    [
-      '-c',
-      '--environment',
-      [
-        `COMMIT:${commit}`,
-        `NODE_ENV:${env}`,
-        formats ? `FORMATS:${formats}` : ``,
-        buildTypes ? `TYPES:true` : ``,
-        prodOnly ? `PROD_ONLY:true` : ``,
-        sourceMap ? `SOURCE_MAP:true` : ``
-      ]
-        .filter(Boolean)
-        .join(',')
-    ],
-    { stdio: 'inherit' }
-  )
-
-  if (buildTypes && pkg.types) {
-    console.log()
-    yellow(`Rolling up type definitions for ${ target }...`)
-
-    // build types
-    const { Extractor, ExtractorConfig } = require('@microsoft/api-extractor')
-
-    const extractorConfigPath = path.resolve(pkgDir, `api-extractor.json`)
-    const extractorConfig =
-      ExtractorConfig.loadFileAndPrepare(extractorConfigPath)
-    const extractorResult = Extractor.invoke(extractorConfig, {
-      localBuild: true,
-      showVerboseMessages: true
-    })
-
-    if (extractorResult.succeeded) {
-      // concat additional d.ts to rolled-up dts
-      const typesDir = path.resolve(pkgDir, 'types')
-      if (await fs.exists(typesDir)) {
-        const dtsPath = path.resolve(pkgDir, pkg.types)
-        const existing = await fs.readFile(dtsPath, 'utf-8')
-        const typeFiles = await fs.readdir(typesDir)
-        const toAdd = await Promise.all(
-          typeFiles.map(file => {
-            return fs.readFile(path.resolve(typesDir, file), 'utf-8')
-          })
-        )
-        await fs.writeFile(dtsPath, existing + '\n' + toAdd.join('\n'))
-      }
-      green(`API Extractor completed successfully.`)
-    } else {
-      error(
-        `API Extractor completed with ${extractorResult.errorCount} errors` +
-          ` and ${extractorResult.warningCount} warnings`
-      )
-      process.exitCode = 1
+    const pkgDir = path.resolve(`./`)
+    const pkg = require(`${pkgDir}/package.json`)
+    target = pkg.name
+    // if this is a full build (no specific targets), ignore private packages
+    if (isRelease && pkg.private) {
+        return
     }
 
-    await fs.remove(`${pkgDir}/dist/packages`)
-  }
+    // if building a specific format, do not remove dist.
+    if (!formats) {
+        await fs.remove(`${pkgDir}/dist`)
+    }
+
+    const env =
+        (pkg.buildOptions && pkg.buildOptions.env) ||
+        (devOnly ? 'development' : 'production')
+    await execa(
+        'rollup',
+        [
+            '-c',
+            '--environment',
+            [
+                `COMMIT:${commit}`,
+                `NODE_ENV:${env}`,
+                formats ? `FORMATS:${formats}` : ``,
+                buildTypes ? `TYPES:true` : ``,
+                prodOnly ? `PROD_ONLY:true` : ``,
+                sourceMap ? `SOURCE_MAP:true` : ``,
+            ]
+                .filter(Boolean)
+                .join(','),
+        ],
+        { stdio: 'inherit' }
+    )
+
+    if (buildTypes && pkg.types) {
+        console.log()
+        yellow(`Rolling up type definitions for ${target}...`)
+
+        // build types
+        const {
+            Extractor,
+            ExtractorConfig,
+        } = require('@microsoft/api-extractor')
+
+        const extractorConfigPath = path.resolve(pkgDir, `api-extractor.json`)
+        const extractorConfig =
+            ExtractorConfig.loadFileAndPrepare(extractorConfigPath)
+        const extractorResult = Extractor.invoke(extractorConfig, {
+            localBuild: true,
+            showVerboseMessages: true,
+        })
+
+        if (extractorResult.succeeded) {
+            // concat additional d.ts to rolled-up dts
+            const typesDir = path.resolve(pkgDir, 'types')
+            if (await fs.exists(typesDir)) {
+                const dtsPath = path.resolve(pkgDir, pkg.types)
+                const existing = await fs.readFile(dtsPath, 'utf-8')
+                const typeFiles = await fs.readdir(typesDir)
+                const toAdd = await Promise.all(
+                    typeFiles.map((file) => {
+                        return fs.readFile(
+                            path.resolve(typesDir, file),
+                            'utf-8'
+                        )
+                    })
+                )
+                await fs.writeFile(dtsPath, existing + '\n' + toAdd.join('\n'))
+            }
+            green(`API Extractor completed successfully.`)
+        } else {
+            error(
+                `API Extractor completed with ${extractorResult.errorCount} errors` +
+                    ` and ${extractorResult.warningCount} warnings`
+            )
+            process.exitCode = 1
+        }
+
+        await fs.remove(`${pkgDir}/dist/packages`)
+    }
 }
 
 function checkSize() {
-  const pkgDir = path.resolve(`./`)
-  checkFileSize(`${pkgDir}/dist/${target}.global.prod.js`)
-  if (!formats || formats.includes('global-runtime')) {
-    checkFileSize(`${pkgDir}/dist/${target}.runtime.global.prod.js`)
-  }
+    const pkgDir = path.resolve(`./`)
+    checkFileSize(`${pkgDir}/dist/${target}.global.prod.js`)
+    if (!formats || formats.includes('global-runtime')) {
+        checkFileSize(`${pkgDir}/dist/${target}.runtime.global.prod.js`)
+    }
 }
 
 function checkFileSize(filePath) {
-  if (!fs.existsSync(filePath)) {
-    return
-  }
-  const file = fs.readFileSync(filePath)
-  const minSize = (file.length / 1024).toFixed(2) + 'kb'
-  const gzipped = gzipSync(file)
-  const gzippedSize = (gzipped.length / 1024).toFixed(2) + 'kb'
-  const compressed = compress(file)
-  const compressedSize = (compressed.length / 1024).toFixed(2) + 'kb'
-  console.log(
-    `${gray(path.basename(filePath)
-    )} min:${minSize} / gzip:${gzippedSize} / brotli:${compressedSize}`
-  )
+    if (!fs.existsSync(filePath)) {
+        return
+    }
+    const file = fs.readFileSync(filePath)
+    const minSize = (file.length / 1024).toFixed(2) + 'kb'
+    const gzipped = gzipSync(file)
+    const gzippedSize = (gzipped.length / 1024).toFixed(2) + 'kb'
+    const compressed = compress(file)
+    const compressedSize = (compressed.length / 1024).toFixed(2) + 'kb'
+    console.log(
+        `${gray(
+            path.basename(filePath)
+        )} min:${minSize} / gzip:${gzippedSize} / brotli:${compressedSize}`
+    )
 }

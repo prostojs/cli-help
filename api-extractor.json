@@ -4,49 +4,49 @@
     "mainEntryPointFilePath": "./dist/src/index.d.ts",
 
     "apiReport": {
-      "enabled": true,
-      "reportFolder": "<projectFolder>/temp/"
+        "enabled": true,
+        "reportFolder": "<projectFolder>/temp/"
     },
-  
+
     "docModel": {
-      "enabled": true
+        "enabled": true
     },
-  
+
     "dtsRollup": {
-      "enabled": true,
-      "publicTrimmedFilePath": "./dist/<unscopedPackageName>.d.ts"
+        "enabled": true,
+        "publicTrimmedFilePath": "./dist/<unscopedPackageName>.d.ts"
     },
-  
+
     "tsdocMetadata": {
-      "enabled": false
+        "enabled": false
     },
-  
+
     "messages": {
-      "compilerMessageReporting": {
-        "default": {
-          "logLevel": "warning"
-        }
-      },
-  
-      "extractorMessageReporting": {
-        "default": {
-          "logLevel": "warning",
-          "addToApiReportFile": true
+        "compilerMessageReporting": {
+            "default": {
+                "logLevel": "warning"
+            }
         },
-  
-        "ae-missing-release-tag": {
-          "logLevel": "none"
-        }
-      },
-  
-      "tsdocMessageReporting": {
-        "default": {
-          "logLevel": "warning"
+
+        "extractorMessageReporting": {
+            "default": {
+                "logLevel": "warning",
+                "addToApiReportFile": true
+            },
+
+            "ae-missing-release-tag": {
+                "logLevel": "none"
+            }
         },
-  
-        "tsdoc-undefined-tag": {
-          "logLevel": "none"
+
+        "tsdocMessageReporting": {
+            "default": {
+                "logLevel": "warning"
+            },
+
+            "tsdoc-undefined-tag": {
+                "logLevel": "none"
+            }
         }
-      }
     }
-  }
+}
