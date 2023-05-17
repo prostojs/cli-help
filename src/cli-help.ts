@@ -1,17 +1,31 @@
+import { Writer } from './columns'
 import { TCliEntry, TCliHelpOptions } from './types'
-import { escapeRegex, evalEntryMatch, normalizePath, wrapLine } from './utils'
+import {
+    entriesSorter,
+    escapeRegex,
+    evalEntryMatch,
+    normalizePath,
+    wrapLine,
+} from './utils'
 
-const MAX_WIDTH = 140
+const MAX_WIDTH = 100
 const MAX_LEFT = 35
 
 export class CliHelpRenderer {
     constructor(protected opts?: TCliHelpOptions) {}
 
-    protected mappedEntries: Record<string, TCliEntry[]> = {}
+    protected mappedEntries: Record<
+        string,
+        { main: TCliEntry; children: TCliEntry[] }
+    > = {}
+
+    protected entries: TCliEntry[] = []
+
+    protected isPrepared: boolean = false
 
     /**
      * Adds CLI Entry
-     * 
+     *
      * ```js
      * chr.addEntry({
      *   command: 'command',
@@ -21,28 +35,65 @@ export class CliHelpRenderer {
      *   aliases: ['cmd'],
      * }, { ... }, ...)
      * ```
-     * 
+     *
      * @param entry1 - object of TCliEntry
      * @param {*} entry2 - object of TCliEntry
      * @param {*} entryN - object of TCliEntry
      */
     public addEntry(...entries: TCliEntry[]) {
-        entries.forEach((entry) => {
-            const match = evalEntryMatch(entry)
-            for (const m of match) {
-                this.mappedEntries[m] = this.mappedEntries[m] || []
-                this.mappedEntries[m].push(entry)
+        this.isPrepared = false
+        this.entries.push(...entries)
+    }
+
+    protected prepareMappedEntries() {
+        if (!this.isPrepared) {
+            this.mappedEntries = {}
+            const processEntryMatch = (entry: TCliEntry) => {
+                const { match, parent, last } = evalEntryMatch(entry)
+                const main = match.shift() as string
+                this.mappedEntries[main] = { main: entry, children: [] }
+                for (const alias of match) {
+                    this.mappedEntries[alias] = this.mappedEntries[main]
+                }
+                if (typeof parent === 'string') {
+                    if (!this.mappedEntries[parent]) {
+                        const newEntry = { command: parent }
+                        processEntryMatch(newEntry)
+                    }
+                    this.mappedEntries[parent].children.push(entry)
+                    const { aliases } = this.mappedEntries[parent].main
+                    if (aliases) {
+                        for (const alias of aliases) {
+                            for (const l of last) {
+                                const aliasedCommand = alias + l
+                                if (!this.mappedEntries[aliasedCommand]) {
+                                    if (!entry.aliases) {
+                                        entry.aliases = []
+                                    }
+                                    entry.aliases.push(aliasedCommand)
+                                    this.mappedEntries[aliasedCommand] =
+                                        this.mappedEntries[main]
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        })
+            this.entries = this.entries.sort(entriesSorter)
+            this.entries.forEach((entry) => {
+                processEntryMatch(entry)
+            })
+            this.isPrepared = true
+        }
     }
 
     /**
      * Renders cli help as array of strings
-     * 
+     *
      * ```js
      * chr.render('', 80, false)
      * ```
-     * 
+     *
      * @param {*} _path (string) cmd path for help tree
      * @param {*} _width (number) width of console
      * @param {*} withColors (boolean) enable colors
@@ -53,30 +104,31 @@ export class CliHelpRenderer {
         _width?: number,
         withColors = false
     ): string[] {
+        this.prepareMappedEntries()
         const width =
             _width ||
             Math.min(process.stdout.columns, this.opts?.maxWidth || MAX_WIDTH) -
                 1
         const path = normalizePath(_path)
-        const entries = this.mappedEntries[path]
-        if (!entries) {
+        const match = this.mappedEntries[path]
+        if (!match) {
             return wrapLine('no help found for the given command...', width)
         }
+        const { main, children } = match
         const lw = Math.min(
             this.opts?.maxLeft || MAX_LEFT,
             Math.floor(width * 0.4)
         )
-        const rw = width - lw - 2
-        const globalLeft = []
-        const globalRight = []
-        const dummyL = ' '.repeat(lw)
-        const dummyR = ' '.repeat(rw)
-        const result = []
+        const rw = width - lw - 3
+        const mark = this.opts?.mark || '•'
+        const space = '   '
+        const spaceFirst = ` ${mark} `
+        const writer = new Writer()
         if (this.opts?.title) {
-            result.push('┍' + '━'.repeat(width - 2) + '┑')
+            writer.write('┍' + '━'.repeat(width - 2) + '┑')
             if (this.opts.title.length >= width - 4) {
                 // wrapped
-                result.push(
+                writer.write(
                     ...wrapLine(this.opts.title, width - 4).map(
                         (l) => '│ ' + l + ' │'
                     )
@@ -86,7 +138,7 @@ export class CliHelpRenderer {
                 const l = this.opts.title.length
                 const l1 = Math.floor(width / 2 - l / 2) - 4
                 const l2 = width - l - 4 - l1
-                result.push(
+                writer.write(
                     '│ ' +
                         ' '.repeat(l1) +
                         this.opts.title +
@@ -94,115 +146,191 @@ export class CliHelpRenderer {
                         ' │'
                 )
             }
-            result.push('┕' + '━'.repeat(width - 2) + '┙')
-            result.push(' '.repeat(width))
+            writer.write('┕' + '━'.repeat(width - 2) + '┙')
+            writer.write(' '.repeat(width))
         }
-        for (const entry of entries) {
-            const left: string[] = []
-            const right: string[] = []
-            function space() {
-                left.push(dummyL)
-                right.push(dummyR)
+
+        const singleCol = writer.toColumns({ count: 1, widths: [width] })
+        const doubleCol = writer.toColumns({
+            count: 2,
+            widths: [lw, rw],
+            space,
+            spaceFirst,
+        })
+
+        const cmd = `$ ${
+            this.opts?.name || process.argv[1].split('/').pop() || ''
+        }`
+        function printCmd(command: string, args?: Record<string, string>) {
+            const renderedArgs = Object.keys(args || {})
+                .map((a) => `<${a}>`)
+                .join(' ')
+            return [`${cmd} ${command}`, renderedArgs].join(' ')
+        }
+
+        const addColors = withColors
+            ? colorizeArray(cmd.slice(2), main)
+            : (l: string[]) => l
+        const boldify = withColors
+            ? (l: string[]) =>
+                l.map(
+                    (l) => `${__DYE_WHITE_BRIGHT__}${l}${__DYE_COLOR_OFF__}`
+                )
+            : (l: string[]) => l
+        const dimify = withColors
+            ? (l: string[]) =>
+                l.map((l) => `${__DYE_DIM__}${l}${__DYE_DIM_OFF__}`)
+            : (l: string[]) => l
+
+        if (main.description) {
+            singleCol.write(0, ['DESCRIPTION'], 0, boldify)
+            singleCol.write(
+                0,
+                (main.description || '').split(/\n/g),
+                2,
+                boldify
+            )
+            singleCol.space()
+        }
+        singleCol.write(0, ['USAGE'], 0, boldify)
+        singleCol.write(0, [printCmd(main.command, main.args)], 2, addColors)
+        singleCol.merge(true)
+
+        if (main.args && Object.keys(main.args).length > 0) {
+            singleCol.space()
+            singleCol.write(0, ['ARGUMENTS'], 0, boldify)
+            singleCol.merge(true)
+
+            for (const [arg, description] of Object.entries(main.args)) {
+                doubleCol.write(0, [`<${arg}>`], 2, addColors)
+                doubleCol.write(
+                    1,
+                    (description || '').split(/\n/g),
+                    0,
+                    addColors
+                )
+                doubleCol.merge(true)
             }
-            function evenLines() {
-                if (left.length !== right.length) {
-                    const big = left.length > right.length ? left : right
-                    const small = left.length < right.length ? left : right
-                    const dummySmall =
-                        left.length < right.length ? dummyL : dummyR
-                    while (big.length > small.length) {
-                        small.push(dummySmall)
-                    }
+        }
+
+        if (main.options && main.options.length) {
+            singleCol.space()
+            singleCol.write(0, ['OPTIONS'], 0, boldify)
+            singleCol.merge(true)
+
+            main.options.sort((a, b) => (a.keys[0] > b.keys[0] ? 1 : -1))
+            for (const opt of main.options) {
+                const keys = opt.keys.map(
+                    (k) => `${k.length > 1 ? '--' : '-'}${k}`
+                )
+                keys[0] += `${opt.value ? `=${opt.value}` : ''}`
+                for (let i = 1; i < keys.length; i++) {
+                    keys[i] += `${opt.value ? '=…' : ''}`
+                }
+                doubleCol.write(0, [keys.join(', ')], 2, addColors)
+                doubleCol.write(
+                    1,
+                    (opt.description || '').split(/\n/g),
+                    0,
+                    addColors
+                )
+                doubleCol.merge(true)
+            }
+        }
+
+        if (main.examples) {
+            singleCol.space()
+            singleCol.write(0, ['EXAMPLES'], 0, boldify)
+            let needSpace = false
+            for (const { description, cmd } of main.examples) {
+                if (needSpace) {
+                    singleCol.space()
+                }
+                needSpace = true
+                if (description) {
+                    singleCol.write(0, [description], 4, (l) =>
+                        dimify(l.map((l) => '  # ' + l.slice(4)))
+                    )
+                }
+                singleCol.write(0, [[printCmd(main.command), cmd].join(' ')], 2)
+                singleCol.merge(true)
+            }
+        }
+
+        if (main.aliases && main.aliases.length) {
+            singleCol.space()
+            singleCol.write(0, ['ALIASES'], 0, boldify)
+
+            main.aliases.sort((a, b) => (a > b ? 1 : -1))
+            for (const a of main.aliases) {
+                singleCol.write(0, [printCmd(a)], 2, addColors)
+            }
+            singleCol.merge(true)
+        }
+
+        if (children && children.length) {
+            singleCol.space()
+            singleCol.write(0, ['COMMANDS'], 0, boldify)
+            singleCol.merge(true)
+
+            children.sort((a, b) => (a.command > b.command ? 1 : -1))
+            for (const entry of children) {
+                if (main.command !== entry.command) {
+                    const addColors = withColors
+                        ? colorizeArray(cmd.slice(2), entry)
+                        : (l: string[]) => l
+                    doubleCol.write(0, [printCmd(entry.command)], 2, addColors)
+                    doubleCol.write(
+                        1,
+                        (entry.description || '').split(/\n/g),
+                        0,
+                        addColors
+                    )
+                    doubleCol.merge(true)
                 }
             }
-            const aliases = [entry.command, ...(entry.aliases || [])].map((c) =>
-                `${this.opts?.name || ''} ${c}`.replace(/\s+/g, ' ')
-            )
-            left.push(
-                ...wrapLine(
-                    `Usage: ${aliases.join(', ')} ${
-                        entry.args?.map((a) => `<${a}>`).join(' ') || ''
-                    }`,
-                    lw
-                ).map((l) =>
-                    withColors ? colorize(this.opts?.name || '', l, entry) : l
-                )
-            )
-            right.push(
-                ...wrapLine(entry.description || '', rw).map((l) =>
-                    withColors ? colorize(this.opts?.name || '', l, entry) : l
-                )
-            )
-            evenLines()
-            if (entry.options) {
-                left.push(...wrapLine('Options:', lw))
-                evenLines()
-                for (const opt of entry.options) {
-                    left.push(
-                        ...wrapLine(
-                            opt.keys
-                                .map((k) => `${k.length > 1 ? '--' : '-'}${k}`)
-                                .join(', '),
-                            lw - 4
-                        )
-                            .map((l) => '  ' + l + ' •')
-                            .map((l) =>
-                                withColors
-                                    ? colorize(this.opts?.name || '', l, entry)
-                                    : l
-                            )
-                    )
-                    right.push(
-                        ...wrapLine(opt.description || '', rw).map((l) =>
-                            withColors
-                                ? colorize(this.opts?.name || '', l, entry)
-                                : l
-                        )
-                    )
-                    evenLines()
-                }
-            }
-            space()
-            globalLeft.push(...left)
-            globalRight.push(...right)
         }
-        for (let i = 0; i < globalLeft.length; i++) {
-            result.push(globalLeft[i] + '  ' + globalRight[i])
-        }
-        return result
+        return writer.getLines()
     }
 
     /**
      * Print the cli help right to the terminal
-     * 
+     *
      * ```js
      * chr.print('', true)
      * ```
-     * 
+     *
      * @param {*} path (string) path to command cli tree
      * @param {*} withColors (boolean) enable colors
      */
     public print(path?: string, withColors = false) {
         const lines = this.render(path, undefined, withColors)
         for (const line of lines) {
-            process.stdout.write('\n' + line)
+            process.stdout.write(line + '\n')
         }
-        process.stdout.write('\n')
     }
+}
+
+function colorizeArray(
+    command: string,
+    entry: TCliEntry
+): (lines: string[]) => string[] {
+    return (lines: string[]) => lines.map((l) => colorize(command, l, entry))
 }
 
 function colorize(command: string, l: string, entry: TCliEntry): string {
     if (entry.args) {
-        entry.args.forEach(
+        const args = Object.keys(entry.args)
+        args.forEach(
             (a) =>
                 (l = l.replace(
                     new RegExp(`(<${escapeRegex(a)}>)`, 'g'),
-                    __DYE_GREEN__ + '$1' + __DYE_COLOR_OFF__
+                    __DYE_GREEN_BRIGHT__ + '$1' + __DYE_COLOR_OFF__
                 ))
         )
     }
     if (entry.options) {
-        entry.options.forEach(({ keys }) => {
+        entry.options.forEach(({ keys, value }) => {
             keys.forEach((key) => {
                 if (key.length > 1) {
                     l = l.replace(
@@ -210,7 +338,11 @@ function colorize(command: string, l: string, entry: TCliEntry): string {
                             `\\s(--${escapeRegex(key)})([^a-zA-Z0-9])`,
                             'g'
                         ),
-                        ' ' + __DYE_BLUE__ + '$1' + __DYE_COLOR_OFF__ + '$2'
+                        ' ' +
+                            __DYE_YELLOW_BRIGHT__ +
+                            '$1' +
+                            __DYE_COLOR_OFF__ +
+                            '$2'
                     )
                 } else {
                     l = l.replace(
@@ -218,10 +350,24 @@ function colorize(command: string, l: string, entry: TCliEntry): string {
                             `\\s(-${escapeRegex(key)})([^a-zA-Z0-9])`,
                             'g'
                         ),
-                        ' ' + __DYE_BLUE__ + '$1' + __DYE_COLOR_OFF__ + '$2'
+                        ' ' +
+                            __DYE_YELLOW_BRIGHT__ +
+                            '$1' +
+                            __DYE_COLOR_OFF__ +
+                            '$2'
                     )
                 }
             })
+            if (value && value.startsWith('<') && value.endsWith('>')) {
+                l = l.replace(
+                    new RegExp(`(${escapeRegex(value)})`, 'g'),
+                    '<' +
+                        __DYE_UNDERSCORE__ +
+                        value.slice(1, value.length - 1) +
+                        __DYE_UNDERSCORE_OFF__ +
+                        '>'
+                )
+            }
         })
     }
     if (command) {

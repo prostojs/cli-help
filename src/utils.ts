@@ -1,13 +1,27 @@
 import { TCliEntry } from './types'
 
-export function evalEntryMatch(entry: TCliEntry): string[] {
-    const parts = entry.command.split(' ').filter((p) => !!p)
+export function evalEntryMatch(entry: TCliEntry): {
+    match: string[]
+    parent?: string
+    last: string[]
+} {
+    const parts = entry.command.split(/\s+|:+/g).filter((p) => !!p)
     const length = parts.length
-    const result = [entry.command, ...(entry.aliases || [])]
-    if (/*(!entry.args || entry.args.length < 1) && */ length > 0) {
-        result.push(parts.slice(0, length - 1).join(' '))
+    const match = [entry.command, ...(entry.aliases || [])]
+    let parent
+    const last = []
+    if (length > 0) {
+        parent = length > 1 ? entry.command.replace(/(\s+|:+)[^\s:]+$/, '') : ''
     }
-    return result
+    if (length > 1) {
+        for (const alias of match) {
+            const v = (/([\s:]+[^\s:]+)$/.exec(alias) || [''])[1]
+            if (v) {
+                last.push(v)
+            }
+        }
+    }
+    return { match, parent, last }
 }
 
 export function normalizePath(path?: string): string {
@@ -66,4 +80,10 @@ export function wrapLine(line: string, width: number): string[] {
 
 export function escapeRegex(s: string): string {
     return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+}
+
+export function entriesSorter(a: TCliEntry, b: TCliEntry): number {
+    const l1 = a.command.split(/\s+|:+/g).length
+    const l2 = b.command.split(/\s+|:+/g).length
+    return l1 === l2 ? (a.command > b.command ? 1 : -1) : l1 - l2
 }
