@@ -128,6 +128,25 @@ export class CliHelpRenderer {
     }
 
     /**
+     * ### Search for a CLI command
+     * Tries to find command by part of its name.
+     * Uses String.startsWith function.
+     * @param _path string
+     * @returns 
+     */
+    public lookup(_path?: string) {
+        this.prepareMappedEntries()
+        const path = normalizePath(_path)
+        const results = []
+        for (const key of Object.keys(this.mappedEntries)) {
+            if (key.startsWith(path)) {
+                results.push(this.mappedEntries[key])
+            }
+        }
+        return results
+    }
+
+    /**
      * ### Resolve the name of the called file (cli)
      * It's possible to pass cli name as a const
      * into options object
