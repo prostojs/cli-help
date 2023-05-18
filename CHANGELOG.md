@@ -1,3 +1,12 @@
+## [0.0.4](https://github.com/prostojs/cli-help/compare/v0.0.3...v0.0.4) (2023-05-18)
+
+
+### Performance Improvements
+
+* optimize stdout ([38896c8](https://github.com/prostojs/cli-help/commit/38896c8afc30179affcadc2cc1868c4172b66c64))
+
+
+
 ## [0.0.3](https://github.com/prostojs/cli-help/compare/v0.0.2...v0.0.3) (2023-05-18)
 
 
