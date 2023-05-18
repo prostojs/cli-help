@@ -1,3 +1,17 @@
+## [0.0.9](https://github.com/prostojs/cli-help/compare/v0.0.8...v0.0.9) (2023-05-18)
+
+
+### Bug Fixes
+
+* fix types issues ([8eae645](https://github.com/prostojs/cli-help/commit/8eae64572551482e11fa14771c7e7d216ae86c26))
+
+
+### Features
+
+* add getComputedAliases method ([4eb96f9](https://github.com/prostojs/cli-help/commit/4eb96f92ce4cf5987769aa148c74d3b04162cb01))
+
+
+
 ## [0.0.8](https://github.com/prostojs/cli-help/compare/v0.0.7...v0.0.8) (2023-05-18)
 
 

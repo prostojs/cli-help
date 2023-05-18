@@ -1,6 +1,6 @@
 {
     "name": "@prostojs/cli-help",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "description": "CLI Help Renderer",
     "main": "index.js",
     "module": "dist/cli-help.esm-bundler.js",
