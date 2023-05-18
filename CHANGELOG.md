@@ -1,3 +1,12 @@
+## [0.0.6](https://github.com/prostojs/cli-help/compare/v0.0.5...v0.0.6) (2023-05-18)
+
+
+### Features
+
+* add getCliName method ([8100d8a](https://github.com/prostojs/cli-help/commit/8100d8a449e081cc161f3b4fb700deeaa5662d4b))
+
+
+
 ## [0.0.5](https://github.com/prostojs/cli-help/compare/v0.0.4...v0.0.5) (2023-05-18)
 
 
