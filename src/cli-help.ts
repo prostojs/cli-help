@@ -88,7 +88,22 @@ export class CliHelpRenderer {
     }
 
     /**
-     * Renders cli help as array of strings
+     * ### Match path with CLI command
+     * Throws an error if no match found
+     * 
+     * @param _path string
+     * @returns 
+     */
+    public match(_path?: string) {
+        this.prepareMappedEntries()
+        const path = normalizePath(_path)
+        const match = this.mappedEntries[path]
+        if (match) return match
+        throw new Error(`Unknown command "${path}"`)
+    }
+
+    /**
+     * ### Renders cli help as array of strings
      *
      * ```js
      * chr.render('', 80, false)
@@ -104,16 +119,11 @@ export class CliHelpRenderer {
         _width?: number,
         withColors = false
     ): string[] {
-        this.prepareMappedEntries()
         const width =
             _width ||
             Math.min(process.stdout.columns, this.opts?.maxWidth || MAX_WIDTH) -
                 1
-        const path = normalizePath(_path)
-        const match = this.mappedEntries[path]
-        if (!match) {
-            throw new Error(`Unknown command "${ path }"`)
-        }
+        const match = this.match(_path)
         const { main, children } = match
         const lw = Math.min(
             this.opts?.maxLeft || MAX_LEFT,
