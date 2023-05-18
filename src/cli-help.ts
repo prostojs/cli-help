@@ -36,17 +36,19 @@ const MAX_LEFT = 35
  *     })
  * ```
  */
-export class CliHelpRenderer {
+export class CliHelpRenderer<C> {
     constructor(protected opts?: TCliHelpOptions) {}
 
     protected mappedEntries: Record<
         string,
-        { main: TCliEntry; children: TCliEntry[] }
+        { main: TCliEntry<C>; children: TCliEntry<C>[] }
     > = {}
 
-    protected entries: TCliEntry[] = []
+    protected entries: TCliEntry<C>[] = []
 
     protected isPrepared: boolean = false
+
+    protected computedAliases: Record<string, TCliEntry<C>> = {}
 
     /**
      * Adds CLI Entry
@@ -65,15 +67,16 @@ export class CliHelpRenderer {
      * @param {*} entry2 - object of TCliEntry
      * @param {*} entryN - object of TCliEntry
      */
-    public addEntry(...entries: Omit<TCliEntry, 'fake'>[]) {
+    public addEntry(...entries: Omit<TCliEntry<C>, 'fake'>[]) {
         this.isPrepared = false
         this.entries.push(...entries)
     }
 
     protected prepareMappedEntries() {
         if (!this.isPrepared) {
+            this.computedAliases = {}
             this.mappedEntries = {}
-            const processEntryMatch = (entry: TCliEntry) => {
+            const processEntryMatch = (entry: TCliEntry<C>) => {
                 const { match, parent, last } = evalEntryMatch(entry)
                 const main = match.shift() as string
                 this.mappedEntries[main] = { main: entry, children: [] }
@@ -93,6 +96,7 @@ export class CliHelpRenderer {
                             for (const l of last) {
                                 const aliasedCommand = alias + l
                                 if (!this.mappedEntries[aliasedCommand]) {
+                                    this.computedAliases[aliasedCommand] = entry
                                     if (!entry.aliases) {
                                         entry.aliases = []
                                     }
@@ -151,13 +155,22 @@ export class CliHelpRenderer {
      * ### Get Fake Entries
      * Returns "fake" entries that do not serve any command,
      * used only for navigation in help.
-     * 
+     * @returns 
+     */
+    public getFakeEntries(): TCliEntry<C>[] {
+        this.prepareMappedEntries()
+        return Object.values(this.mappedEntries).filter(e => e.main.fake).map(e => e.main)
+    }
+
+    /**
+     * ### Get Computed Aliases
+     * Returns computed aliases.
      * Useful to get overview of all the aliases combinations.
      * @returns 
      */
-    public getFakeEntries(): TCliEntry[] {
+    public getComputedAliases(): Record<string, TCliEntry<C>> {
         this.prepareMappedEntries()
-        return Object.values(this.mappedEntries).filter(e => e.main.fake).map(e => e.main)
+        return this.computedAliases
     }
 
     /**
@@ -392,12 +405,12 @@ export class CliHelpRenderer {
 
 function colorizeArray(
     command: string,
-    entry: TCliEntry
+    entry: Omit<TCliEntry<string>, 'custom'>
 ): (lines: string[]) => string[] {
     return (lines: string[]) => lines.map((l) => colorize(command, l, entry))
 }
 
-function colorize(command: string, l: string, entry: TCliEntry): string {
+function colorize(command: string, l: string, entry: Omit<TCliEntry<string>, 'custom'>): string {
     if (entry.args) {
         const args = Object.keys(entry.args)
         args.forEach(

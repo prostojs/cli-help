@@ -6,7 +6,7 @@ export interface TCliHelpOptions {
     mark?: string
 }
 
-export interface TCliEntry {
+export interface TCliEntry<C> {
     command: string
     description?: string
     options?: { keys: string[]; description?: string; value?: string }[]
@@ -14,4 +14,5 @@ export interface TCliEntry {
     aliases?: string[]
     examples?: { description?: string; cmd: string }[]
     fake?: boolean
+    custom?: C
 }
