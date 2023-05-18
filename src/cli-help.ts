@@ -305,9 +305,7 @@ export class CliHelpRenderer {
      */
     public print(path?: string, withColors = false) {
         const lines = this.render(path, undefined, withColors)
-        for (const line of lines) {
-            process.stdout.write(line + '\n')
-        }
+        process.stdout.write(lines.join('\n') + '\n')
     }
 }
 

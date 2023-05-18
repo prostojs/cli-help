@@ -35,9 +35,7 @@ export class Writer {
     }
 
     print() {
-        for (const line of this.lines) {
-            process.stdout.write(line + '\n')
-        }
+        process.stdout.write(this.lines.join('\n') + '\n')
     }
 }
 
@@ -124,9 +122,7 @@ export class Columns<N extends number> {
 
     print(andClear = false) {
         const lines = this.merge(andClear)
-        for (const line of lines) {
-            process.stdout.write(line + '\n')
-        }
+        process.stdout.write(lines.join('\n') + '\n')
     }
 }
 
