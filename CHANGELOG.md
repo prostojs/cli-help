@@ -1,3 +1,12 @@
+## [0.0.7](https://github.com/prostojs/cli-help/compare/v0.0.6...v0.0.7) (2023-05-18)
+
+
+### Features
+
+* add lookup method ([dbbe9f0](https://github.com/prostojs/cli-help/commit/dbbe9f0d86b6d816e899e02a0386893a1196efe9))
+
+
+
 ## [0.0.6](https://github.com/prostojs/cli-help/compare/v0.0.5...v0.0.6) (2023-05-18)
 
 
