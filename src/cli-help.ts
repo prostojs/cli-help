@@ -29,9 +29,9 @@ export class CliHelpRenderer {
      * ```js
      * chr.addEntry({
      *   command: 'command',
-     *   description: 'Description of command',
-     *   options: [{ keys: ['p', 'project'], description: 'project path' }],
-     *   args: ['name'],
+     *   description: 'Description of the command',
+     *   options: [{ keys: ['project', 'p'], description: 'Description of the option' }],
+     *   args: { argName: 'Description of the arg' },
      *   aliases: ['cmd'],
      * }, { ... }, ...)
      * ```
@@ -112,7 +112,7 @@ export class CliHelpRenderer {
         const path = normalizePath(_path)
         const match = this.mappedEntries[path]
         if (!match) {
-            return wrapLine('no help found for the given command...', width)
+            throw new Error(`Unknown command "${ path }"`)
         }
         const { main, children } = match
         const lw = Math.min(
