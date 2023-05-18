@@ -1,3 +1,12 @@
+## [0.0.5](https://github.com/prostojs/cli-help/compare/v0.0.4...v0.0.5) (2023-05-18)
+
+
+### Features
+
+* add match method ([b81d680](https://github.com/prostojs/cli-help/commit/b81d6804bac2509e40481588f5a5c6724a2b3107))
+
+
+
 ## [0.0.4](https://github.com/prostojs/cli-help/compare/v0.0.3...v0.0.4) (2023-05-18)
 
 
