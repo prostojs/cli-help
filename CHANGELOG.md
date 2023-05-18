@@ -1,3 +1,12 @@
+## [0.0.10](https://github.com/prostojs/cli-help/compare/v0.0.9...v0.0.10) (2023-05-18)
+
+
+### Features
+
+* minor visual improvements ([f179fb8](https://github.com/prostojs/cli-help/commit/f179fb8c3d8e69f6f395924cbc3014fab081d14d))
+
+
+
 ## [0.0.9](https://github.com/prostojs/cli-help/compare/v0.0.8...v0.0.9) (2023-05-18)
 
 
