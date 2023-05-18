@@ -1,3 +1,12 @@
+## [0.0.8](https://github.com/prostojs/cli-help/compare/v0.0.7...v0.0.8) (2023-05-18)
+
+
+### Features
+
+* add getFakeEntries method ([e42d8c5](https://github.com/prostojs/cli-help/commit/e42d8c58499395d58c847cff5060d1ed1b219563))
+
+
+
 ## [0.0.7](https://github.com/prostojs/cli-help/compare/v0.0.6...v0.0.7) (2023-05-18)
 
 
