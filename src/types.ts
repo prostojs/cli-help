@@ -13,4 +13,5 @@ export interface TCliEntry {
     args?: Record<string, string>
     aliases?: string[]
     examples?: { description?: string; cmd: string }[]
+    fake?: boolean
 }

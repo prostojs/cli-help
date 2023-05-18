@@ -65,7 +65,7 @@ export class CliHelpRenderer {
      * @param {*} entry2 - object of TCliEntry
      * @param {*} entryN - object of TCliEntry
      */
-    public addEntry(...entries: TCliEntry[]) {
+    public addEntry(...entries: Omit<TCliEntry, 'fake'>[]) {
         this.isPrepared = false
         this.entries.push(...entries)
     }
@@ -82,7 +82,8 @@ export class CliHelpRenderer {
                 }
                 if (typeof parent === 'string') {
                     if (!this.mappedEntries[parent]) {
-                        const newEntry = { command: parent }
+                        // create fake parent for help navigation purposes
+                        const newEntry = { command: parent, fake: true }
                         processEntryMatch(newEntry)
                     }
                     this.mappedEntries[parent].children.push(entry)
@@ -144,6 +145,19 @@ export class CliHelpRenderer {
             }
         }
         return results
+    }
+
+    /**
+     * ### Get Fake Entries
+     * Returns "fake" entries that do not serve any command,
+     * used only for navigation in help.
+     * 
+     * Useful to get overview of all the aliases combinations.
+     * @returns 
+     */
+    public getFakeEntries(): TCliEntry[] {
+        this.prepareMappedEntries()
+        return Object.values(this.mappedEntries).filter(e => e.main.fake).map(e => e.main)
     }
 
     /**
@@ -257,9 +271,11 @@ export class CliHelpRenderer {
             )
             singleCol.space()
         }
-        singleCol.write(0, ['USAGE'], 0, boldify)
-        singleCol.write(0, [printCmd(main.command, main.args)], 2, addColors)
-        singleCol.merge(true)
+        if (!main.fake) {
+            singleCol.write(0, ['USAGE'], 0, boldify)
+            singleCol.write(0, [printCmd(main.command, main.args)], 2, addColors)
+            singleCol.merge(true)
+        }
 
         if (main.args && Object.keys(main.args).length > 0) {
             singleCol.space()
@@ -278,7 +294,7 @@ export class CliHelpRenderer {
             }
         }
 
-        if (main.options && main.options.length) {
+        if (!main.fake && main.options && main.options.length) {
             singleCol.space()
             singleCol.write(0, ['OPTIONS'], 0, boldify)
             singleCol.merge(true)
@@ -303,7 +319,7 @@ export class CliHelpRenderer {
             }
         }
 
-        if (main.examples) {
+        if (!main.fake && main.examples) {
             singleCol.space()
             singleCol.write(0, ['EXAMPLES'], 0, boldify)
             let needSpace = false
