@@ -11,6 +11,31 @@ import {
 const MAX_WIDTH = 100
 const MAX_LEFT = 35
 
+/**
+ * ## CliHelpRenderer
+ * ### Class that can render CLI instructions
+ * 
+ * ```js
+ *    const { CliHelpRenderer } = require('@prostojs/cli-help')
+ *
+ *    const chr = new CliHelpRenderer({
+ *        name: 'my-cli',
+ *    })
+ *    chr.addEntry({
+ *         command: 'my-command',
+ *         aliases: ['my-cmd'],
+ *         description: 'command description',
+ *         options: [
+ *             {
+ *                 keys: ['output'],
+ *                 description: 'Output format',
+ *                 value: 'json|yaml',
+ *             },
+ *         ],
+ *         args: { argName: 'arg description' },
+ *     })
+ * ```
+ */
 export class CliHelpRenderer {
     constructor(protected opts?: TCliHelpOptions) {}
 
@@ -103,6 +128,19 @@ export class CliHelpRenderer {
     }
 
     /**
+     * ### Resolve the name of the called file (cli)
+     * It's possible to pass cli name as a const
+     * into options object
+     * ```js
+     * new CliHelpRenderer({ name: 'mycli' })
+     * ```
+     * @returns string
+     */
+    public getCliName(): string {
+        return this.opts?.name || process.argv[1].split('/').pop() as string
+    }
+
+    /**
      * ### Renders cli help as array of strings
      *
      * ```js
@@ -168,9 +206,7 @@ export class CliHelpRenderer {
             spaceFirst,
         })
 
-        const cmd = `$ ${
-            this.opts?.name || process.argv[1].split('/').pop() || ''
-        }`
+        const cmd = `$ ${ this.getCliName() }`
         function printCmd(command: string, args?: Record<string, string>) {
             const renderedArgs = Object.keys(args || {})
                 .map((a) => `<${a}>`)
