@@ -218,6 +218,7 @@ export class CliHelpRenderer<C> {
         const space = '   '
         const spaceFirst = ` ${mark} `
         const writer = new Writer()
+        
         if (this.opts?.title) {
             writer.write('┍' + '━'.repeat(width - 2) + '┑')
             if (this.opts.title.length >= width - 4) {
@@ -332,7 +333,7 @@ export class CliHelpRenderer<C> {
             }
         }
 
-        if (!main.fake && main.examples) {
+        if (!main.fake && main.examples && main.examples.length) {
             singleCol.space()
             singleCol.write(0, ['EXAMPLES'], 0, boldify)
             let needSpace = false
@@ -363,7 +364,9 @@ export class CliHelpRenderer<C> {
         }
 
         if (children && children.length) {
-            singleCol.space()
+            if (writer.getLines().length > 0) {
+                singleCol.space()
+            }
             singleCol.write(0, ['COMMANDS'], 0, boldify)
             singleCol.merge(true)
 
