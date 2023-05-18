@@ -1,3 +1,12 @@
+## [0.0.3](https://github.com/prostojs/cli-help/compare/v0.0.2...v0.0.3) (2023-05-18)
+
+
+### Features
+
+* throw error on unknown command ([8105101](https://github.com/prostojs/cli-help/commit/8105101ee2bbf828e993652b9a1d74ec1bd22956))
+
+
+
 ## [0.0.2](https://github.com/prostojs/cli-help/compare/v0.0.1...v0.0.2) (2023-05-17)
 
 
