@@ -19,7 +19,7 @@ describe('Columns', () => {
             'A new line for a column',
         ])
         expect(c.merge()).toMatchInlineSnapshot(`
-Array [
+[
   "Line 1  - The first  - The first ",
   "          line of      line of   ",
   "          the second   the third ",
