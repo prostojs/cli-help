@@ -1,6 +1,6 @@
 {
     "name": "@prostojs/cli-help",
-    "version": "0.0.10",
+    "version": "0.0.11",
     "description": "CLI Help Renderer",
     "main": "dist/index.cjs",
     "module": "dist/index.mjs",

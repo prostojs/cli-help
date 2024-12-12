@@ -1,3 +1,12 @@
+## [0.0.11](https://github.com/prostojs/cli-help/compare/v0.0.10...v0.0.11) (2024-12-12)
+
+
+### Bug Fixes
+
+* fix mjs exports ([413a99b](https://github.com/prostojs/cli-help/commit/413a99bd962b4d86fceb3a66bf831c142de92edd))
+
+
+
 ## [0.0.10](https://github.com/prostojs/cli-help/compare/v0.0.9...v0.0.10) (2023-05-18)
 
 
