@@ -1,3 +1,11 @@
+## [0.0.12](https://github.com/prostojs/cli-help/compare/v0.0.11...v0.0.12) (2026-05-14)
+
+
+### Bug Fixes
+
+* handle non-TTY stdout, bump dev deps ([acf31eb](https://github.com/prostojs/cli-help/commit/acf31ebda9104aec74c0f68ecb301e1746cd4f1d))
+* pin execa to v5 to keep release script working ([7b08524](https://github.com/prostojs/cli-help/commit/7b085241d5a5c7dbae79b3a5fcfdd81d7424cb33))
+
 ## [0.0.11](https://github.com/prostojs/cli-help/compare/v0.0.10...v0.0.11) (2024-12-12)
 
 
