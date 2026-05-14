@@ -4,6 +4,7 @@ export interface TCliHelpOptions {
     maxWidth?: number
     maxLeft?: number
     mark?: string
+    fallbackWidth?: number
 }
 
 export interface TCliEntry<C> {

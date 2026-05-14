@@ -1,11 +1,13 @@
 import { TCliEntry } from './types'
 
+const COMMAND_PARTS = /\s+|:+/g
+
 export function evalEntryMatch(entry: Omit<TCliEntry<string>, 'custom'>): {
     match: string[]
     parent?: string
     last: string[]
 } {
-    const parts = entry.command.split(/\s+|:+/g).filter((p) => !!p)
+    const parts = entry.command.split(COMMAND_PARTS).filter((p) => !!p)
     const length = parts.length
     const match = [entry.command, ...(entry.aliases || [])]
     let parent
@@ -83,7 +85,7 @@ export function escapeRegex(s: string): string {
 }
 
 export function entriesSorter(a: Omit<TCliEntry<string>, 'custom'>, b: Omit<TCliEntry<string>, 'custom'>): number {
-    const l1 = a.command.split(/\s+|:+/g).length
-    const l2 = b.command.split(/\s+|:+/g).length
+    const l1 = a.command.split(COMMAND_PARTS).length
+    const l2 = b.command.split(COMMAND_PARTS).length
     return l1 === l2 ? (a.command > b.command ? 1 : -1) : l1 - l2
 }

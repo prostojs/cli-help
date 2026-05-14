@@ -1,5 +1,22 @@
 import { CliHelpRenderer } from '../cli-help'
 
+function withStdoutColumns<T>(value: number | undefined, fn: () => T): T {
+    const desc = Object.getOwnPropertyDescriptor(process.stdout, 'columns')
+    Object.defineProperty(process.stdout, 'columns', {
+        configurable: true,
+        value,
+    })
+    try {
+        return fn()
+    } finally {
+        if (desc) {
+            Object.defineProperty(process.stdout, 'columns', desc)
+        } else {
+            delete (process.stdout as unknown as { columns?: number }).columns
+        }
+    }
+}
+
 describe('CliHelpRenderer', () => {
     it('', () => {
         const chr = new CliHelpRenderer({
@@ -174,5 +191,51 @@ describe('CliHelpRenderer', () => {
   "  $ my-cli dependencies:delete      • Deletes a dependency                                         ",
 ]
 `)
+    })
+
+    describe('non-TTY rendering', () => {
+        function makeRenderer() {
+            const chr = new CliHelpRenderer({ name: 'my-cli' })
+            chr.addEntry({
+                command: 'add',
+                description: 'Adds a new entry',
+                options: [{ keys: ['force', 'f'], description: 'Skip checks' }],
+            })
+            return chr
+        }
+
+        it('renders non-empty content when stdout.columns is undefined', () => {
+            const lines = withStdoutColumns(undefined, () =>
+                makeRenderer().render('add')
+            )
+            const description = lines.find((l) => l.includes('Adds a new entry'))
+            const option = lines.find((l) => l.includes('Skip checks'))
+            expect(description).toBeDefined()
+            expect(option).toBeDefined()
+            for (const line of lines) {
+                expect(line).not.toMatch(/NaN/)
+            }
+        })
+
+        it('respects explicit fallbackWidth when stdout.columns is undefined', () => {
+            const chr = new CliHelpRenderer({
+                name: 'my-cli',
+                fallbackWidth: 60,
+            })
+            chr.addEntry({ command: 'add', description: 'Adds a new entry' })
+            const lines = withStdoutColumns(undefined, () => chr.render('add'))
+            for (const line of lines) {
+                expect(line.length).toBe(59)
+            }
+        })
+
+        it('respects stdout.columns when present', () => {
+            const lines = withStdoutColumns(80, () =>
+                makeRenderer().render('add')
+            )
+            for (const line of lines) {
+                expect(line.length).toBe(79)
+            }
+        })
     })
 })

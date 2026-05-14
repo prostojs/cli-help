@@ -10,6 +10,7 @@ import {
 
 const MAX_WIDTH = 100
 const MAX_LEFT = 35
+const FALLBACK_WIDTH = 100
 
 /**
  * ## CliHelpRenderer
@@ -203,10 +204,13 @@ export class CliHelpRenderer<C> {
         _width?: number,
         withColors = false
     ): string[] {
+        const cols =
+            process.stdout.columns ??
+            this.opts?.fallbackWidth ??
+            FALLBACK_WIDTH
         const width =
             _width ||
-            Math.min(process.stdout.columns, this.opts?.maxWidth || MAX_WIDTH) -
-                1
+            Math.min(cols, this.opts?.maxWidth || MAX_WIDTH) - 1
         const match = this.match(_path)
         const { main, children } = match
         const lw = Math.min(
